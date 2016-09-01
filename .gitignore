@@ -92,3 +92,4 @@ ENV/
 data/
 
 .DS_Store
+*.swp
