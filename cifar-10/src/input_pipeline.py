@@ -9,13 +9,18 @@ class DataPipeline(object):
     def __init__(
             self,
             file_names,
-            data_size=3072,
+            image_w=32,
+            image_h=32,
             num_labels=10,
             batch_size=100
             ):
 
-        self._total_size = data_size + LABEL_SIZE
-        self._data_size = data_size
+        self._data_size = image_w * image_h * 3 
+        self._total_size = self._data_size + LABEL_SIZE
+
+        self._w = image_w
+        self._h = image_h
+
         self._num_labels = num_labels
         self._batch_size = batch_size
         self._file_names = file_names
@@ -51,5 +56,11 @@ class DataPipeline(object):
                             capacity=self._batch_size*3,
                             min_after_dequeue=self._batch_size*2
                         )
+        
+        ret_x = tf.transpose(
+                    tf.reshape(x, [self._batch_size, 3, self._w, self._h]),
+                    (0, 2, 3, 1) 
+        )
+        ret_y = tf.one_hot(y, self._num_labels, 1, 0)
 
-        return x, tf.one_hot(y, self._num_labels, 1, 0)
+        return ret_x, ret_y
