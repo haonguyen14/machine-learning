@@ -77,6 +77,14 @@ class ConvoModel(object):
             name="softmax"
         )
 
+    def train_op(self):
+
+        global_step = tf.Variable(0, trainable=False)
+        optimizer = tf.train.GradientDescentOptimizer(0.01)
+
+        loss = tf.reduce_mean(self._softmax_loss_layer)
+        return optimizer.minimize(loss, global_step)
+
     def _get_convo_layer(
         self,
         input,
