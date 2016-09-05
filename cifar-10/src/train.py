@@ -18,18 +18,24 @@ if __name__ == "__main__":
         num_epoch=1000000
     )
 
+    global_step = tf.Variable(0, trainable=False)
+
     convo_model = m.ConvoModel(train_x, train_y, config)
     convo_model.initialize()
 
-    train_op = convo_model.train_op()
+    loss_op, train_op = convo_model.train_op(global_step)
+
+    init = tf.initialize_all_variables()
+    merged = tf.merge_all_summaries()
+
+    summary_writer = tf.train.SummaryWriter("summary/")
 
     with tf.Session() as session:
-
-        init = tf.initialize_all_variables()
 
         tf.train.start_queue_runners(session)
         session.run(init)
 
         for i in range(100):
 
-            session.run(train_op)
+            loss, _, summary = session.run([loss_op, train_op, merged])
+            summary_writer.add_summary(summary, i)

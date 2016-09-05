@@ -69,7 +69,8 @@ class ConvoModel(object):
         )
 
         # softmax layer
-        self._softmax_layer, self._softmax_loss_layer = self._get_softmax_layer(
+        self._softmax_layer,\
+        self._softmax_loss_layer = self._get_softmax_layer(
             self._dense_layer_2,
             self._y,
             input_size=1024,
@@ -77,24 +78,26 @@ class ConvoModel(object):
             name="softmax"
         )
 
-    def train_op(self):
+    def train_op(self, global_step):
 
-        global_step = tf.Variable(0, trainable=False)
         optimizer = tf.train.GradientDescentOptimizer(0.01)
 
         loss = tf.reduce_mean(self._softmax_loss_layer)
-        return optimizer.minimize(loss, global_step)
+
+        tf.scalar_summary("loss", loss)
+
+        return loss, optimizer.minimize(loss, global_step)
 
     def _get_convo_layer(
-        self,
-        input,
-        a_function,
-        size,
-        in_channels,
-        out_channels,
-        stride,
-        padding_config=SAME_PADDING,
-        name=""):
+            self,
+            input,
+            a_function,
+            size,
+            in_channels,
+            out_channels,
+            stride,
+            padding_config=SAME_PADDING,
+            name=""):
 
         weights = tf.get_variable(
             "%s_weights" % name,
@@ -137,7 +140,14 @@ class ConvoModel(object):
             name=name
         )
 
-    def _get_dense_layer(self, input, input_size, hidden_units, a_function, name=""):
+    def _get_dense_layer(
+        self,
+        input,
+        input_size,
+        hidden_units,
+        a_function,
+        name=""
+    ):
 
         weights = tf.get_variable(
             "%s_weights" % name,
@@ -153,7 +163,14 @@ class ConvoModel(object):
 
         return a_function(tf.matmul(input, weights) + biases)
 
-    def _get_softmax_layer(self, input, labels, input_size, output_size, name=""):
+    def _get_softmax_layer(
+        self,
+        input,
+        labels,
+        input_size,
+        output_size,
+        name=""
+    ):
 
         weights = tf.get_variable(
             "%s_weights" % name,
