@@ -1,3 +1,5 @@
+import sys
+
 import tensorflow as tf
 import input_pipeline as ip
 import model as m
@@ -5,6 +7,8 @@ from configuration import Configuration
 
 
 if __name__ == "__main__":
+
+    training_steps = int(sys.argv[1])
 
     file_names = ["data/data_batch_%d.bin" % i for i in range(1, 6)]
 
@@ -25,17 +29,17 @@ if __name__ == "__main__":
 
     loss_op, train_op = convo_model.train_op(global_step)
 
-    init = tf.initialize_all_variables()
-    merged = tf.merge_all_summaries()
-
-    summary_writer = tf.train.SummaryWriter("summary/")
-
     with tf.Session() as session:
+
+        init = tf.initialize_all_variables()
+        merged = tf.merge_all_summaries()
+        summary_writer = tf.train.SummaryWriter("summary/", session.graph)
 
         tf.train.start_queue_runners(session)
         session.run(init)
 
-        for i in range(100):
+        for i in range(training_steps):
 
+            print("Step %d" % i)
             loss, _, summary = session.run([loss_op, train_op, merged])
             summary_writer.add_summary(summary, i)
