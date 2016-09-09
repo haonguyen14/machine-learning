@@ -33,11 +33,14 @@ if __name__ == "__main__":
 
     loss_op, train_op = convo_model.train_op(global_step)
 
+
     with tf.Session() as session:
 
         init = tf.initialize_all_variables()
         merged = tf.merge_all_summaries()
         summary_writer = tf.train.SummaryWriter("summary/", session.graph)
+
+        saver = tf.train.Saver(tf.all_variables())
 
         tf.train.start_queue_runners(session)
         session.run(init)
@@ -63,3 +66,8 @@ if __name__ == "__main__":
                 
                 summary_str = session.run(merged)
                 summary_writer.add_summary(summary_str, i)
+
+            if i % 100 == 0 or (i + 1) == training_steps:
+
+                checkpoint_path = "checkpoints.ckpt" 
+                saver.save(session, checkpoint_path, global_step=i)
