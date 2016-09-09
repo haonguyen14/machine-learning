@@ -102,7 +102,7 @@ class ConvoModel(object):
         weights = tf.get_variable(
             "%s_weights" % name,
             shape=(size, size, in_channels, out_channels),
-            initializer=tf.random_uniform_initializer(-.00001, 0.00001)
+            initializer=tf.truncated_normal_initializer(stddev=5e-2, dtype=tf.float32)
         )
 
         biases = tf.get_variable(
@@ -152,7 +152,7 @@ class ConvoModel(object):
         weights = tf.get_variable(
             "%s_weights" % name,
             shape=(input_size, hidden_units),
-            initializer=tf.random_uniform_initializer(-.00001, .00001)
+            initializer=tf.truncated_normal_initializer(stddev=5e-2, dtype=tf.float32)
         )
 
         biases = tf.get_variable(
@@ -175,7 +175,7 @@ class ConvoModel(object):
         weights = tf.get_variable(
             "%s_weights" % name,
             shape=(input_size, output_size),
-            initializer=tf.random_uniform_initializer(-.00001, .00001)
+            initializer=tf.truncated_normal_initializer(stddev=5e-2, dtype=tf.float32)
         )
 
         biases = tf.get_variable(

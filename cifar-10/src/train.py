@@ -1,6 +1,10 @@
 import sys
+import time
+from datetime import datetime
 
 import tensorflow as tf
+import numpy as np
+
 import input_pipeline as ip
 import model as m
 from configuration import Configuration
@@ -40,6 +44,22 @@ if __name__ == "__main__":
 
         for i in range(training_steps):
 
-            print("Step %d" % i)
-            loss, _, summary = session.run([loss_op, train_op, merged])
-            summary_writer.add_summary(summary, i)
+            start_time = time.time()
+            loss, _ = session.run([loss_op, train_op])
+            duration = time.time() - start_time
+
+            assert not np.isnan(loss), "Model diverged with loss=NaN"
+
+            if i % 10 == 0:
+                
+                num_examples_per_step = config.batch_size
+                examples_per_sec = num_examples_per_step / duration
+                sec_per_batch = float(duration)
+                format_str = "%s: step %d, loss = %.2f (%.1f examples/sec; %.3f sec/batch)"
+
+                print(format_str % (datetime.now(), i, loss, examples_per_sec, sec_per_batch))
+
+            if i % 100 == 0:
+                
+                summary_str = session.run(merged)
+                summary_writer.add_summary(summary_str, i)
