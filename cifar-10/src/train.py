@@ -75,7 +75,7 @@ if __name__ == "__main__":
                 summary_str = session.run(merged)
                 summary_writer.add_summary(summary_str, i)
 
-            if i % 100 == 0 or (i + 1) == training_steps:
+            if i % 1000 == 0 or (i + 1) == training_steps:
 
                 checkpoint_path = "checkpoints.ckpt"
                 saver.save(session, checkpoint_path, global_step=i)
