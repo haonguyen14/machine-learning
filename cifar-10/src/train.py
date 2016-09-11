@@ -28,11 +28,10 @@ if __name__ == "__main__":
 
     global_step = tf.Variable(0, trainable=False)
 
-    convo_model = m.ConvoModel(train_x, train_y, config)
-    convo_model.initialize()
+    convo_model = m.ConvoModel(config)
+    convo_model.initialize(train_x)
 
-    loss_op, train_op = convo_model.train_op(global_step)
-
+    loss_op, train_op = convo_model.train_op(train_y, global_step)
 
     with tf.Session() as session:
 
@@ -54,20 +53,29 @@ if __name__ == "__main__":
             assert not np.isnan(loss), "Model diverged with loss=NaN"
 
             if i % 10 == 0:
-                
+
                 num_examples_per_step = config.batch_size
                 examples_per_sec = num_examples_per_step / duration
                 sec_per_batch = float(duration)
-                format_str = "%s: step %d, loss = %.2f (%.1f examples/sec; %.3f sec/batch)"
 
-                print(format_str % (datetime.now(), i, loss, examples_per_sec, sec_per_batch))
+                format_str = "%s: step %d, loss = %.2f"
+                format_str += " (%.2f examples/sec; %.3f sec/batch)"
+
+                print(
+                    format_str % (
+                            datetime.now(),
+                            i,
+                            loss,
+                            examples_per_sec,
+                            sec_per_batch)
+                )
 
             if i % 100 == 0:
-                
+
                 summary_str = session.run(merged)
                 summary_writer.add_summary(summary_str, i)
 
             if i % 100 == 0 or (i + 1) == training_steps:
 
-                checkpoint_path = "checkpoints.ckpt" 
+                checkpoint_path = "checkpoints.ckpt"
                 saver.save(session, checkpoint_path, global_step=i)

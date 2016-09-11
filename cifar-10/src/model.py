@@ -6,18 +6,15 @@ SAME_PADDING = "SAME"
 
 class ConvoModel(object):
 
-    def __init__(self, x, y, config):
+    def __init__(self, config):
 
         self._config = config
 
-        self._x = x
-        self._y = y
-
-    def initialize(self):
+    def initialize(self, x):
 
         # first convolution layer: output_shape (batch_size, 16, 16, 64)
         self._convo_1 = self._get_convo_layer(
-            self._x,
+            x,
             a_function=tf.sigmoid,
             size=5,
             in_channels=3,
@@ -69,16 +66,19 @@ class ConvoModel(object):
         )
 
         # softmax layer
-        self._softmax_layer,\
-        self._softmax_loss_layer = self._get_softmax_layer(
+        self._softmax_logit, self._softmax_layer = self._get_softmax_layer(
             self._dense_layer_2,
-            self._y,
             input_size=1024,
             output_size=10,
             name="softmax"
         )
 
-    def train_op(self, global_step):
+    def train_op(self, y, global_step):
+
+        self._softmax_loss_layer = tf.nn.sparse_softmax_cross_entropy_with_logits(
+            self._softmax_logit,
+            y
+        )
 
         optimizer = tf.train.GradientDescentOptimizer(0.01)
 
@@ -87,6 +87,10 @@ class ConvoModel(object):
         tf.scalar_summary("loss", loss)
 
         return loss, optimizer.minimize(loss, global_step)
+
+    def infer(self):
+
+        return self._softmax_layer
 
     def _get_convo_layer(
             self,
@@ -102,7 +106,10 @@ class ConvoModel(object):
         weights = tf.get_variable(
             "%s_weights" % name,
             shape=(size, size, in_channels, out_channels),
-            initializer=tf.truncated_normal_initializer(stddev=5e-2, dtype=tf.float32)
+            initializer=tf.truncated_normal_initializer(
+                stddev=5e-2,
+                dtype=tf.float32
+            )
         )
 
         biases = tf.get_variable(
@@ -152,7 +159,10 @@ class ConvoModel(object):
         weights = tf.get_variable(
             "%s_weights" % name,
             shape=(input_size, hidden_units),
-            initializer=tf.truncated_normal_initializer(stddev=5e-2, dtype=tf.float32)
+            initializer=tf.truncated_normal_initializer(
+                stddev=5e-2,
+                dtype=tf.float32
+            )
         )
 
         biases = tf.get_variable(
@@ -166,7 +176,6 @@ class ConvoModel(object):
     def _get_softmax_layer(
         self,
         input,
-        labels,
         input_size,
         output_size,
         name=""
@@ -175,7 +184,10 @@ class ConvoModel(object):
         weights = tf.get_variable(
             "%s_weights" % name,
             shape=(input_size, output_size),
-            initializer=tf.truncated_normal_initializer(stddev=5e-2, dtype=tf.float32)
+            initializer=tf.truncated_normal_initializer(
+                    stddev=5e-2,
+                    dtype=tf.float32
+            )
         )
 
         biases = tf.get_variable(
@@ -186,7 +198,4 @@ class ConvoModel(object):
 
         logits = tf.matmul(input, weights) + biases
 
-        return (
-            tf.nn.softmax(logits),
-            tf.nn.softmax_cross_entropy_with_logits(logits, labels)
-        )
+        return logits, tf.nn.softmax(logits)

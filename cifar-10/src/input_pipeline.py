@@ -61,9 +61,5 @@ class DataPipeline(object):
                     tf.reshape(x, [self._batch_size, 3, self._w, self._h]),
                     (0, 2, 3, 1)
         )
-        ret_y = tf.cast(
-            tf.one_hot(y, self._num_labels, 1, 0),
-            tf.float32
-        )
 
-        return ret_x, ret_y
+        return ret_x, y
