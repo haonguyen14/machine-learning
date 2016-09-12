@@ -77,5 +77,5 @@ if __name__ == "__main__":
 
             if i % 1000 == 0 or (i + 1) == training_steps:
 
-                checkpoint_path = "checkpoints.ckpt"
+                checkpoint_path = "checkpoints/checkpoints.ckpt"
                 saver.save(session, checkpoint_path, global_step=i)

@@ -3,7 +3,6 @@ import numpy as np
 import time
 import math
 from datetime import datetime
-
 import input_pipeline as ip
 import model as m
 from configuration import Configuration
@@ -13,7 +12,7 @@ def evaluate(saver, top_k):
 
     with tf.Session() as session:
 
-        ckpt = tf.train.get_checkpoint_state("./")
+        ckpt = tf.train.get_checkpoint_state("checkpoints/")
 
         if ckpt and ckpt.model_checkpoint_path:
             global_step = ckpt.model_checkpoint_path.split("/")[-1].split("-")[-1]
@@ -22,23 +21,36 @@ def evaluate(saver, top_k):
             print("No checkpoint file found")
             return
 
-        tf.train.start_queue_runners(session)
+        coord = tf.train.Coordinator()
+
+        threads = []
+
+        for qr in tf.get_collection(tf.GraphKeys.QUEUE_RUNNERS):
+            threads.extend(qr.create_threads(
+                                session,
+                                coord=coord,
+                                daemon=True,
+                                start=True))
 
         num_iters = int(math.ceil(10000 / 100))
         true_count = 0
         total_sample_count = num_iters * 100
         step = 0
 
-        print("Evaluate at checkpoint file %s" % ckpt.model_checkpoint_path)
+        try:
+            while step < num_iters:
 
-        while step < num_iters:
+                predictions = session.run([top_k])
+                true_count += np.sum(predictions)
+                step += 1
 
-            predictions = session.run([top_k])
-            true_count += np.sum(predictions)
-            step += 1
+            precision = float(true_count) / total_sample_count
+            print("%s: precision @ %s = %.3f" % (datetime.now(), global_step, precision))
+        except Exception as e:
+            coord.request_stop(e)
 
-        precision = true_count / total_sample_count
-        print("%s: precision @ 1 = %.3f" % (datetime.now(), precision))
+        coord.request_stop()
+        coord.join(threads, stop_grace_period_secs=10)
 
 if __name__ == "__main__":
 
@@ -66,4 +78,4 @@ if __name__ == "__main__":
     while True:
 
         evaluate(saver, top_k)
-        time.sleep(300)
+        time.sleep(45)
