@@ -2,17 +2,20 @@ import tensorflow as tf
 import numpy as np
 import time
 import math
+import sys
 from datetime import datetime
+
+
 import input_pipeline as ip
 import model as m
 from configuration import Configuration
 
 
-def evaluate(saver, top_k):
+def evaluate(saver, exp_name, top_k):
 
     with tf.Session() as session:
 
-        ckpt = tf.train.get_checkpoint_state("checkpoints/")
+        ckpt = tf.train.get_checkpoint_state("experiments/%s" % exp_name)
 
         if ckpt and ckpt.model_checkpoint_path:
             global_step = ckpt.model_checkpoint_path.split("/")[-1].split("-")[-1]
@@ -55,6 +58,8 @@ def evaluate(saver, top_k):
 if __name__ == "__main__":
 
     file_name = ["data/test_batch.bin"]
+    exp_name = sys.argv[1]
+    a_function = tf.nn.relu if sys.argv[2] == "relu" else tf.sigmoid
 
     pipeline = ip.DataPipeline(file_name)
     test_x, test_y = pipeline.get_batch_op()
@@ -63,7 +68,8 @@ if __name__ == "__main__":
         input_size=3072,
         output_size=10,
         batch_size=100,
-        num_epoch=1000000
+        num_epoch=1000000,
+        a_function=a_function
     )
 
     convo_model = m.ConvoModel(config)
@@ -77,5 +83,5 @@ if __name__ == "__main__":
 
     while True:
 
-        evaluate(saver, top_k)
+        evaluate(saver, exp_name, top_k)
         time.sleep(45)
