@@ -13,6 +13,7 @@ from configuration import Configuration
 if __name__ == "__main__":
 
     training_steps = int(sys.argv[1])
+    a_function = tf.nn.relu if sys.argv[2] == "relu" else tf.sigmoid
 
     file_names = ["data/data_batch_%d.bin" % i for i in range(1, 6)]
 
@@ -23,7 +24,8 @@ if __name__ == "__main__":
         input_size=3072,
         output_size=10,
         batch_size=100,
-        num_epoch=1000000
+        num_epoch=1000000,
+        a_function=a_function
     )
 
     global_step = tf.Variable(0, trainable=False)

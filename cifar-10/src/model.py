@@ -15,13 +15,15 @@ class ConvoModel(object):
         # first convolution layer: output_shape (batch_size, 16, 16, 64)
         self._convo_1 = self._get_convo_layer(
             x,
-            a_function=tf.sigmoid,
+            a_function=self._config.a_function,
             size=5,
             in_channels=3,
             out_channels=64,
             stride=1,
             name="convo_1"
         )
+
+        tf.histogram_summary("conv_1_a", self._convo_1)
 
         self._max_pool_1 = self._get_max_pool_layer(
             self._convo_1,
@@ -33,13 +35,15 @@ class ConvoModel(object):
         # second convolution layer: output_shape (batch_size, 8, 8, 64)
         self._convo_2 = self._get_convo_layer(
             self._max_pool_1,
-            a_function=tf.sigmoid,
+            a_function=self._config.a_function,
             size=2,
             in_channels=64,
             out_channels=64,
             stride=1,
             name="convo_2"
         )
+
+        tf.histogram_summary("conv_2_a", self._convo_2)
 
         self._max_pool_2 = self._get_max_pool_layer(
             self._convo_2,
@@ -53,17 +57,21 @@ class ConvoModel(object):
             tf.reshape(self._max_pool_2, (100, -1)),
             input_size=8*8*64,
             hidden_units=2048,
-            a_function=tf.sigmoid,
+            a_function=self._config.a_function,
             name="dense_layer_1"
         )
+
+        tf.histogram_summary("dense_1", self._dense_layer_1)
 
         self._dense_layer_2 = self._get_dense_layer(
             self._dense_layer_1,
             input_size=2048,
             hidden_units=1024,
-            a_function=tf.sigmoid,
+            a_function=self._config.a_function,
             name="dense_layer_2"
         )
+
+        tf.histogram_summary("dense_2", self._dense_layer_2)
 
         # softmax layer
         self._softmax_logit, self._softmax_layer = self._get_softmax_layer(
