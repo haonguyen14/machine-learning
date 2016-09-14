@@ -1,4 +1,5 @@
 import tensorflow as tf
+import math
 
 
 SAME_PADDING = "SAME"
@@ -20,6 +21,7 @@ class ConvoModel(object):
             in_channels=3,
             out_channels=64,
             stride=1,
+            stddev=2.0/75.0,
             name="convo_1"
         )
 
@@ -40,6 +42,7 @@ class ConvoModel(object):
             in_channels=64,
             out_channels=64,
             stride=1,
+            stddev=2.0/256.0,
             name="convo_2"
         )
 
@@ -58,6 +61,7 @@ class ConvoModel(object):
             input_size=8*8*64,
             hidden_units=2048,
             a_function=self._config.a_function,
+            stddev=2.0/4096.0,
             name="dense_layer_1"
         )
 
@@ -68,6 +72,7 @@ class ConvoModel(object):
             input_size=2048,
             hidden_units=1024,
             a_function=self._config.a_function,
+            stddev=2.0/2048.0,
             name="dense_layer_2"
         )
 
@@ -109,13 +114,14 @@ class ConvoModel(object):
             out_channels,
             stride,
             padding_config=SAME_PADDING,
+            stddev=5e-2,
             name=""):
 
         weights = tf.get_variable(
             "%s_weights" % name,
             shape=(size, size, in_channels, out_channels),
             initializer=tf.truncated_normal_initializer(
-                stddev=5e-2,
+                stddev=stddev,
                 dtype=tf.float32
             )
         )
@@ -161,6 +167,7 @@ class ConvoModel(object):
         input_size,
         hidden_units,
         a_function,
+        stddev=5e-2,
         name=""
     ):
 
@@ -168,7 +175,7 @@ class ConvoModel(object):
             "%s_weights" % name,
             shape=(input_size, hidden_units),
             initializer=tf.truncated_normal_initializer(
-                stddev=5e-2,
+                stddev=stddev,
                 dtype=tf.float32
             )
         )

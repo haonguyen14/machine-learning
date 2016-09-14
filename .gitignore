@@ -94,5 +94,4 @@ data/
 .DS_Store
 *.swp
 
-checkpoints/
-summary/
+experiments/

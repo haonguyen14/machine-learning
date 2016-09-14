@@ -1,5 +1,6 @@
 import sys
 import time
+import os
 from datetime import datetime
 
 import tensorflow as tf
@@ -12,8 +13,16 @@ from configuration import Configuration
 
 if __name__ == "__main__":
 
-    training_steps = int(sys.argv[1])
-    a_function = tf.nn.relu if sys.argv[2] == "relu" else tf.sigmoid
+    exp_name = sys.argv[1]
+    training_steps = int(sys.argv[2])
+    a_function = tf.nn.relu if sys.argv[3] == "relu" else tf.sigmoid
+
+    exp_path = "experiments/%s" % exp_name
+    if not os.path.exists(exp_path):
+        os.makedirs(exp_path)
+    else:
+        print("Experiment %s already exists" % exp_name)
+        sys.exit()
 
     file_names = ["data/data_batch_%d.bin" % i for i in range(1, 6)]
 
@@ -39,7 +48,7 @@ if __name__ == "__main__":
 
         init = tf.initialize_all_variables()
         merged = tf.merge_all_summaries()
-        summary_writer = tf.train.SummaryWriter("summary/", session.graph)
+        summary_writer = tf.train.SummaryWriter(exp_path, session.graph)
 
         saver = tf.train.Saver(tf.all_variables())
 
@@ -79,5 +88,5 @@ if __name__ == "__main__":
 
             if i % 1000 == 0 or (i + 1) == training_steps:
 
-                checkpoint_path = "checkpoints/checkpoints.ckpt"
+                checkpoint_path = "%s/checkpoints.ckpt" % exp_path
                 saver.save(session, checkpoint_path, global_step=i)
