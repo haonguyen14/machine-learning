@@ -105,6 +105,18 @@ class ConvoModel(object):
 
         return self._softmax_layer
 
+    def _get_variable_with_summary(self, initializer, shape, name=""):
+
+        variable = tf.get_variable(
+            name,
+            shape=shape,
+            initializer=initializer
+        )
+
+        tf.histogram_summary(name, variable)
+
+        return variable
+
     def _get_convo_layer(
             self,
             input,
@@ -117,13 +129,13 @@ class ConvoModel(object):
             stddev=5e-2,
             name=""):
 
-        weights = tf.get_variable(
-            "%s_weights" % name,
-            shape=(size, size, in_channels, out_channels),
+        weights = self._get_variable_with_summary(
             initializer=tf.truncated_normal_initializer(
                 stddev=stddev,
                 dtype=tf.float32
-            )
+            ),
+            shape=(size, size, in_channels, out_channels),
+            name="%s_weights" % name,
         )
 
         biases = tf.get_variable(
@@ -171,13 +183,13 @@ class ConvoModel(object):
         name=""
     ):
 
-        weights = tf.get_variable(
-            "%s_weights" % name,
-            shape=(input_size, hidden_units),
+        weights = self._get_variable_with_summary(
             initializer=tf.truncated_normal_initializer(
                 stddev=stddev,
                 dtype=tf.float32
-            )
+            ),
+            shape=(input_size, hidden_units),
+            name="%s_weights" % name,
         )
 
         biases = tf.get_variable(
@@ -196,13 +208,13 @@ class ConvoModel(object):
         name=""
     ):
 
-        weights = tf.get_variable(
-            "%s_weights" % name,
-            shape=(input_size, output_size),
+        weights = self._get_variable_with_summary(
             initializer=tf.truncated_normal_initializer(
                     stddev=5e-2,
                     dtype=tf.float32
-            )
+            ),
+            shape=(input_size, output_size),
+            name="%s_weights" % name
         )
 
         biases = tf.get_variable(
