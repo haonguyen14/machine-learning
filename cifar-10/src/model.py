@@ -1,5 +1,5 @@
 import tensorflow as tf
-import math
+import numpy as np
 
 
 SAME_PADDING = "SAME"
@@ -11,7 +11,7 @@ class ConvoModel(object):
 
         self._config = config
 
-    def initialize(self, x):
+    def initialize(self, x, keep_prob):
 
         # first convolution layer: output_shape (batch_size, 16, 16, 64)
         self._convo_1 = self._get_convo_layer(
@@ -21,11 +21,11 @@ class ConvoModel(object):
             in_channels=3,
             out_channels=64,
             stride=1,
-            stddev=2.0/75.0,
+            stddev=np.sqrt(2.0/75.0),
             name="convo_1"
         )
 
-        tf.histogram_summary("conv_1_a", self._convo_1)
+        tf.histogram_summary("conv_1/activations", self._convo_1)
 
         self._max_pool_1 = self._get_max_pool_layer(
             self._convo_1,
@@ -42,11 +42,11 @@ class ConvoModel(object):
             in_channels=64,
             out_channels=64,
             stride=1,
-            stddev=2.0/256.0,
+            stddev=np.sqrt(2.0/256.0),
             name="convo_2"
         )
 
-        tf.histogram_summary("conv_2_a", self._convo_2)
+        tf.histogram_summary("conv_2/activations", self._convo_2)
 
         self._max_pool_2 = self._get_max_pool_layer(
             self._convo_2,
@@ -61,22 +61,22 @@ class ConvoModel(object):
             input_size=8*8*64,
             hidden_units=2048,
             a_function=self._config.a_function,
-            stddev=2.0/4096.0,
+            stddev=np.sqrt(2.0/4096.0),
             name="dense_layer_1"
         )
 
-        tf.histogram_summary("dense_1", self._dense_layer_1)
+        tf.histogram_summary("dense_1/activations", self._dense_layer_1)
 
         self._dense_layer_2 = self._get_dense_layer(
             self._dense_layer_1,
             input_size=2048,
             hidden_units=1024,
             a_function=self._config.a_function,
-            stddev=2.0/2048.0,
+            stddev=np.sqrt(2.0/2048.0),
             name="dense_layer_2"
         )
 
-        tf.histogram_summary("dense_2", self._dense_layer_2)
+        tf.histogram_summary("dense_2/activations", self._dense_layer_2)
 
         # softmax layer
         self._softmax_logit, self._softmax_layer = self._get_softmax_layer(
@@ -93,9 +93,12 @@ class ConvoModel(object):
             y
         )
 
-        optimizer = tf.train.GradientDescentOptimizer(0.01)
+        optimizer = tf.train.GradientDescentOptimizer(1e-4)
 
-        loss = tf.reduce_mean(self._softmax_loss_layer)
+        cross_entropy_mean = tf.reduce_mean(self._softmax_loss_layer)
+        tf.add_to_collection("losses", cross_entropy_mean)
+
+        loss = tf.add_n(tf.get_collection("losses"), name="loss")
 
         tf.scalar_summary("loss", loss)
 
@@ -105,7 +108,7 @@ class ConvoModel(object):
 
         return self._softmax_layer
 
-    def _get_variable_with_summary(self, initializer, shape, name=""):
+    def _get_variable_with_summary(self, initializer, shape, wd=None, name=""):
 
         variable = tf.get_variable(
             name,
@@ -113,7 +116,12 @@ class ConvoModel(object):
             initializer=initializer
         )
 
-        tf.histogram_summary(name, variable)
+        if wd is not None:
+            weight_decay = tf.mul(tf.nn.l2_loss(variable), wd, name="weight_loss")
+            tf.add_to_collection("losses", weight_decay)
+
+        tf.histogram_summary("%s" % name, variable)
+        tf.scalar_summary("%s/sparsity" % name, tf.nn.zero_fraction(variable))
 
         return variable
 
@@ -134,6 +142,7 @@ class ConvoModel(object):
                 stddev=stddev,
                 dtype=tf.float32
             ),
+            wd=0.0,
             shape=(size, size, in_channels, out_channels),
             name="%s_weights" % name,
         )
@@ -188,6 +197,7 @@ class ConvoModel(object):
                 stddev=stddev,
                 dtype=tf.float32
             ),
+            wd=0.004,
             shape=(input_size, hidden_units),
             name="%s_weights" % name,
         )
@@ -210,9 +220,10 @@ class ConvoModel(object):
 
         weights = self._get_variable_with_summary(
             initializer=tf.truncated_normal_initializer(
-                    stddev=5e-2,
+                    stddev=np.sqrt(1.0/1024),
                     dtype=tf.float32
             ),
+            wd=0.0,
             shape=(input_size, output_size),
             name="%s_weights" % name
         )

@@ -15,7 +15,7 @@ class DataPipeline(object):
             batch_size=100
             ):
 
-        self._data_size = image_w * image_h * 3 
+        self._data_size = image_w * image_h * 3
         self._total_size = self._data_size + LABEL_SIZE
 
         self._w = image_w
@@ -46,7 +46,16 @@ class DataPipeline(object):
         y = tf.squeeze(tf.slice(uint8_value, [0], [LABEL_SIZE]))
         x = tf.slice(uint8_value, [LABEL_SIZE], [self._data_size])
 
-        return tf.cast(x, tf.float32), tf.cast(y, tf.int64)
+        return self._process_image(tf.cast(x, tf.float32)), tf.cast(y, tf.int64)
+
+    def _process_image(self, x):
+
+        reshape_x = tf.transpose(
+            tf.reshape(x, [3, self._h, self._w]),
+            (1, 2, 0)
+        )
+
+        return tf.image.per_image_whitening(reshape_x)
 
     def _get_batch_op(self, x, y):
 
@@ -57,9 +66,4 @@ class DataPipeline(object):
                             min_after_dequeue=self._batch_size*2
                         )
 
-        ret_x = tf.transpose(
-                    tf.reshape(x, [self._batch_size, 3, self._w, self._h]),
-                    (0, 2, 3, 1)
-        )
-
-        return ret_x, y
+        return x, y

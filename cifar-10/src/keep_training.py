@@ -1,10 +1,10 @@
-import sys
-import time
-import os
-from datetime import datetime
-
 import tensorflow as tf
 import numpy as np
+
+import os
+import sys
+import time
+from datetime import datetime
 
 import input_pipeline as ip
 import model as m
@@ -16,15 +16,11 @@ keep_prob = 0.75
 if __name__ == "__main__":
 
     exp_name = sys.argv[1]
-    training_steps = int(sys.argv[2])
-    a_function = tf.nn.relu if sys.argv[3] == "relu" else tf.sigmoid
+    step = int(sys.argv[2])
+    training_steps = int(sys.argv[3])
+    a_function = tf.nn.relu if sys.argv[4] == "relu" else tf.sigmoid
 
     exp_path = "experiments/%s" % exp_name
-    if not os.path.exists(exp_path):
-        os.makedirs(exp_path)
-    else:
-        print("Experiment %s already exists" % exp_name)
-        sys.exit()
 
     file_names = ["data/data_batch_%d.bin" % i for i in range(1, 6)]
 
@@ -39,28 +35,28 @@ if __name__ == "__main__":
         a_function=a_function
     )
 
-    dropout = tf.placeholder(tf.float32)
+    global_step = tf.Variable(int(step), trainable=False)
 
-    global_step = tf.Variable(0, trainable=False)
+    dropout = tf.placeholder(tf.float32)
 
     convo_model = m.ConvoModel(config)
     convo_model.initialize(train_x, dropout)
 
     loss_op, train_op = convo_model.train_op(train_y, global_step)
 
+    saver = tf.train.Saver(tf.all_variables())
+
+    ckpt = tf.train.get_checkpoint_state("experiments/%s" % exp_name)
 
     with tf.Session() as session:
 
-        init = tf.initialize_all_variables()
         merged = tf.merge_all_summaries()
         summary_writer = tf.train.SummaryWriter(exp_path, session.graph)
 
-        saver = tf.train.Saver(tf.all_variables())
+        tf.train.start_queue_runners()
+        saver.restore(session, ckpt.model_checkpoint_path)
 
-        tf.train.start_queue_runners(session)
-        session.run(init)
-
-        for i in range(training_steps):
+        for i in range(int(step) + 1, int(step) + 1 + training_steps):
 
             start_time = time.time()
             loss, _ = session.run([loss_op, train_op], feed_dict={dropout: keep_prob})

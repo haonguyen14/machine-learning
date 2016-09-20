@@ -11,7 +11,7 @@ import model as m
 from configuration import Configuration
 
 
-def evaluate(saver, exp_name, top_k):
+def evaluate(saver, exp_name, top_k, summary_writer, summary_op, dropout):
 
     with tf.Session() as session:
 
@@ -43,12 +43,18 @@ def evaluate(saver, exp_name, top_k):
         try:
             while step < num_iters:
 
-                predictions = session.run([top_k])
+                predictions = session.run([top_k], feed_dict={dropout: 1.0})
                 true_count += np.sum(predictions)
                 step += 1
 
             precision = float(true_count) / total_sample_count
             print("%s: precision @ %s = %.3f" % (datetime.now(), global_step, precision))
+
+            summary = tf.Summary()
+            summary.ParseFromString(session.run(summary_op, feed_dict={dropout: 1.0}))
+            summary.value.add(tag='Precision @ 1', simple_value=precision)
+            summary_writer.add_summary(summary, global_step)
+
         except Exception as e:
             coord.request_stop(e)
 
@@ -72,16 +78,21 @@ if __name__ == "__main__":
         a_function=a_function
     )
 
+    dropout = tf.placeholder(tf.float32)
+
     convo_model = m.ConvoModel(config)
-    convo_model.initialize(test_x)
+    convo_model.initialize(test_x, dropout)
 
     predictions = convo_model.infer()
 
     top_k = tf.nn.in_top_k(predictions, test_y, 1)
 
+    summary_op = tf.merge_all_summaries()
+    summary_writer = tf.train.SummaryWriter("experiments/%s" % exp_name)
+
     saver = tf.train.Saver(tf.all_variables())
 
     while True:
 
-        evaluate(saver, exp_name, top_k)
+        evaluate(saver, exp_name, top_k, summary_writer, summary_op, dropout)
         time.sleep(45)
