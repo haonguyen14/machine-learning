@@ -93,7 +93,19 @@ class ConvoModel(object):
             y
         )
 
-        optimizer = tf.train.GradientDescentOptimizer(1e-4)
+        initial_learning_rate = 0.1
+        num_batches_per_epoch = self._config.examples_per_epoches / self._config.batch_size
+        decay_steps = int(num_batches_per_epoch * 350.0)
+
+        lr = tf.train.exponential_decay(
+            initial_learning_rate,
+            global_step,
+            decay_steps,
+            0.1,
+            staircase=True
+        )
+
+        optimizer = tf.train.GradientDescentOptimizer(0.1)
 
         cross_entropy_mean = tf.reduce_mean(self._softmax_loss_layer)
         tf.add_to_collection("losses", cross_entropy_mean)
@@ -142,7 +154,6 @@ class ConvoModel(object):
                 stddev=stddev,
                 dtype=tf.float32
             ),
-            wd=0.0,
             shape=(size, size, in_channels, out_channels),
             name="%s_weights" % name,
         )
@@ -223,7 +234,6 @@ class ConvoModel(object):
                     stddev=np.sqrt(1.0/1024),
                     dtype=tf.float32
             ),
-            wd=0.0,
             shape=(input_size, output_size),
             name="%s_weights" % name
         )

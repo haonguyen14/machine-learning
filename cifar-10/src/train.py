@@ -12,6 +12,8 @@ from configuration import Configuration
 
 
 keep_prob = 0.75
+batch_size = 100
+examples_per_epoches=50000
 
 if __name__ == "__main__":
 
@@ -28,14 +30,14 @@ if __name__ == "__main__":
 
     file_names = ["data/data_batch_%d.bin" % i for i in range(1, 6)]
 
-    pipeline = ip.DataPipeline(file_names)
+    pipeline = ip.DataPipeline(file_names, batch_size=batch_size)
     train_x, train_y = pipeline.get_batch_op()
 
     config = Configuration(
         input_size=3072,
         output_size=10,
-        batch_size=100,
-        num_epoch=1000000,
+        examples_per_epoches=examples_per_epoches,
+        batch_size=batch_size,
         a_function=a_function
     )
 

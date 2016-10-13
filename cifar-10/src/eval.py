@@ -11,7 +11,7 @@ import model as m
 from configuration import Configuration
 
 
-def evaluate(saver, exp_name, top_k, summary_writer, summary_op, dropout):
+def evaluate(saver, exp_name, top_k, summary_writer, summary_op, dropout, prev_step):
 
     with tf.Session() as session:
 
@@ -19,6 +19,10 @@ def evaluate(saver, exp_name, top_k, summary_writer, summary_op, dropout):
 
         if ckpt and ckpt.model_checkpoint_path:
             global_step = ckpt.model_checkpoint_path.split("/")[-1].split("-")[-1]
+
+            if prev_step == global_step:
+                return
+
             saver.restore(session, ckpt.model_checkpoint_path)
         else:
             print("No checkpoint file found")
@@ -61,6 +65,8 @@ def evaluate(saver, exp_name, top_k, summary_writer, summary_op, dropout):
         coord.request_stop()
         coord.join(threads, stop_grace_period_secs=10)
 
+    return global_step
+
 if __name__ == "__main__":
 
     file_name = ["data/test_batch.bin"]
@@ -73,10 +79,10 @@ if __name__ == "__main__":
     config = Configuration(
         input_size=3072,
         output_size=10,
+        examples_per_epoches=50000,
         batch_size=100,
-        num_epoch=1000000,
         a_function=a_function
-    )
+     )
 
     dropout = tf.placeholder(tf.float32)
 
@@ -92,7 +98,9 @@ if __name__ == "__main__":
 
     saver = tf.train.Saver(tf.all_variables())
 
+    prev_step = -1
+
     while True:
 
-        evaluate(saver, exp_name, top_k, summary_writer, summary_op, dropout)
+        prev_step = evaluate(saver, exp_name, top_k, summary_writer, summary_op, dropout, prev_step)
         time.sleep(45)
