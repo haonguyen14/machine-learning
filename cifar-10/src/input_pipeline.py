@@ -66,4 +66,6 @@ class DataPipeline(object):
                             min_after_dequeue=self._batch_size*2
                         )
 
+        tf.image_summary("images", x)
+
         return x, y

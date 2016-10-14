@@ -27,12 +27,23 @@ class ConvoModel(object):
 
         tf.histogram_summary("conv_1/activations", self._convo_1)
 
-        self._max_pool_1 = self._get_max_pool_layer(
+        self._max_switches_1, self._max_pool_1 = self._get_max_pool_layer(
             self._convo_1,
             size=3,
             stride=2,
             name="max_pool_1"
         )
+
+        """
+        self._norm_1 = tf.nn.lrn(
+            self._max_pool_1,
+            4,
+            bias=1.0,
+            alpha=0.001 / 9.0,
+            beta=0.75,
+            name="norm_1"
+        )
+        """
 
         # second convolution layer: output_shape (batch_size, 8, 8, 64)
         self._convo_2 = self._get_convo_layer(
@@ -48,7 +59,18 @@ class ConvoModel(object):
 
         tf.histogram_summary("conv_2/activations", self._convo_2)
 
-        self._max_pool_2 = self._get_max_pool_layer(
+        """
+        self._norm_2 = tf.nn.lrn(
+            self._convo_2,
+            4,
+            bias=1.0,
+            alpha=0.001 / 9.0,
+            beta=0.75,
+            name="norm_2"
+        )
+        """
+
+        self._max_switches_2, self._max_pool_2 = self._get_max_pool_layer(
             self._convo_2,
             size=2,
             stride=2,
@@ -185,13 +207,23 @@ class ConvoModel(object):
         name=""
     ):
 
-        return tf.nn.max_pool(
+        max_pool = tf.nn.max_pool(
             input,
             ksize=[1, size, size, 1],
             strides=[1, stride, stride, 1],
             padding=padding_config,
             name=name
         )
+
+        _, switches = tf.nn.max_pool_with_argmax(
+            input,
+            ksize=[1, size, size, 1],
+            strides=[1, stride, stride, 1],
+            padding=padding_config,
+            name=name
+        )
+
+        return (switches, max_pool)
 
     def _get_dense_layer(
         self,
