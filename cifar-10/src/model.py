@@ -29,7 +29,7 @@ class ConvoModel(object):
 
         self._max_switches_1, self._max_pool_1 = self._get_max_pool_layer(
             self._convo_1,
-            size=3,
+            size=2,
             stride=2,
             name="max_pool_1"
         )
